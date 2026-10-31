@@ -24,3 +24,6 @@ sourcemap.json
 # Never commit secrets
 .env
 *.token
+
+# Reviewable CUPEC place export
+!releases/*.rbxlx

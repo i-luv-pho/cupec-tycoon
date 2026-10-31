@@ -1,0 +1,817 @@
+<roblox version="4">
+  <Item class="Lighting" referent="0">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <Color3 name="Ambient">
+        <R>0.5</R>
+        <G>0.5</G>
+        <B>0.55</B>
+      </Color3>
+      <float name="Brightness">2</float>
+      <float name="ClockTime">15</float>
+      <bool name="GlobalShadows">true</bool>
+      <Color3 name="OutdoorAmbient">
+        <R>0.6</R>
+        <G>0.6</G>
+        <B>0.65</B>
+      </Color3>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="1">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="2">
+      <Properties>
+        <string name="Name">CUPEC</string>
+      </Properties>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">Config</string>
+          <string name="Source"><![CDATA[--!strict
+-- All amounts are fictional game cash. No real securities or paid products.
+return {
+	StartCash = 450,
+	MaxCash = 1e12,
+	MarketSeconds = 75,
+	Markets = {
+		{ name = "STEADY DEMAND", factor = 1 },
+		{ name = "EXPORT BOOM", factor = 1.25 },
+		{ name = "SLOW QUARTER", factor = 0.8 },
+	},
+	Businesses = {
+		{ id = "factory", name = "Siam Works", sector = "MANUFACTURING", cost = 300, assets = 800, income = 8,
+			story = "Useful machines. Poor operations. Buy the assets, then fix the bottleneck.",
+			projects = {
+				{ name = "Fix the production line", cost = 180, addIncome = 10, detail = "Remove downtime: +10 cash / sec" },
+				{ name = "Install a second line", cost = 650, addIncome = 22, detail = "Expand output: +22 cash / sec" },
+			} },
+		{ id = "logistics", name = "Relay Logistics", sector = "LOGISTICS", cost = 1600, assets = 2400, income = 25,
+			story = "Acquire the depot. Connect your factory to customers with cheaper distribution.",
+			projects = {
+				{ name = "Optimize delivery routes", cost = 700, addIncome = 30, detail = "Cut empty trips: +30 cash / sec" },
+				{ name = "Expand the loading dock", cost = 1800, addIncome = 50, detail = "Serve more customers: +50 cash / sec" },
+			} },
+		{ id = "exports", name = "Atlas Exports", sector = "GLOBAL SALES", cost = 6000, assets = 7500, income = 90,
+			story = "Take useful products to global customers. Build a business beyond the local market.",
+			projects = {
+				{ name = "Launch a global catalogue", cost = 2400, addIncome = 90, detail = "Reach new buyers: +90 cash / sec" },
+				{ name = "Open an overseas hub", cost = 6000, addIncome = 180, detail = "Scale distribution: +180 cash / sec" },
+			} },
+	},
+}
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="4">
+        <Properties>
+          <string name="Name">Economy</string>
+          <string name="Source"><![CDATA[--!strict
+-- Pure domain logic; shared by the authoritative server and CLI tests.
+local Config = if script then require(script.Parent.Config) else require('./Config')
+local Economy = {}
+
+function Economy.new()
+	return { cash = Config.StartCash, earned = 0, invested = 0, businesses = {}, version = 1 }
+end
+
+local function finite(n)
+	return type(n) == 'number' and n == n and math.abs(n) < math.huge
+end
+
+function Economy.definition(id)
+	if type(id) ~= 'string' or #id > 32 then return nil end
+	for _, def in Config.Businesses do if def.id == id then return def end end
+	return nil
+end
+
+function Economy.restore(raw)
+	if type(raw) ~= 'table' or raw.version ~= 1 then return nil end
+	if not finite(raw.cash) or raw.cash < 0 or raw.cash > Config.MaxCash then return nil end
+	if not finite(raw.earned) or raw.earned < 0 or raw.earned > Config.MaxCash then return nil end
+	if not finite(raw.invested) or raw.invested < 0 or raw.invested > Config.MaxCash then return nil end
+	if type(raw.businesses) ~= 'table' then return nil end
+	local p = Economy.new()
+	p.cash, p.earned, p.invested = raw.cash, raw.earned, raw.invested
+	for id, level in raw.businesses do
+		local d = Economy.definition(id)
+		if not d or not finite(level) or level % 1 ~= 0 or level < 0 or level > #d.projects then return nil end
+		p.businesses[id] = level
+	end
+	return p
+end
+
+function Economy.rate(p, factor)
+	local rate = 0
+	for _, d in Config.Businesses do
+		local level = p.businesses[d.id]
+		if level ~= nil then
+			rate += d.income
+			for i = 1, level do rate += d.projects[i].addIncome end
+		end
+	end
+	-- An integrated factory/depot creates a small operating synergy.
+	if p.businesses.factory ~= nil and p.businesses.logistics ~= nil then rate *= 1.15 end
+	return rate * factor
+end
+
+function Economy.assets(p)
+	local assets = 0
+	for _, d in Config.Businesses do
+		local level = p.businesses[d.id]
+		if level ~= nil then
+			assets += d.assets
+			for i = 1, level do assets += d.projects[i].cost end
+		end
+	end
+	return assets
+end
+
+function Economy.transact(p, action, id)
+	local d = Economy.definition(id)
+	if not d then return false, 'Unknown business.' end
+	local level = p.businesses[id]
+	if action == 'buy' then
+		if level ~= nil then return false, 'You already own this business.' end
+		if id == 'logistics' and p.businesses.factory == nil then return false, 'Acquire Siam Works first.' end
+		if id == 'exports' and p.businesses.logistics == nil then return false, 'Acquire Relay Logistics first.' end
+		if p.cash < d.cost then return false, 'Earn more cash before acquiring this business.' end
+		p.cash -= d.cost
+		p.invested += d.cost
+		p.businesses[id] = 0
+		return true, 'Acquired ' .. d.name .. '!'
+	elseif action == 'improve' then
+		if level == nil then return false, 'Acquire this business first.' end
+		local project = d.projects[level + 1]
+		if not project then return false, 'All improvements are complete.' end
+		if p.cash < project.cost then return false, 'Earn more cash before funding this improvement.' end
+		p.cash -= project.cost
+		p.invested += project.cost
+		p.businesses[id] = level + 1
+		return true, project.name .. ' complete!'
+	end
+	return false, 'Unknown action.'
+end
+
+function Economy.tick(p, seconds, factor)
+	if not finite(seconds) or seconds < 0 or seconds > 5 then return 0 end
+	if not finite(factor) or factor < 0.5 or factor > 2 then return 0 end
+	local earned = math.min(Economy.rate(p, factor) * seconds, Config.MaxCash - p.cash, Config.MaxCash - p.earned)
+	p.cash += earned
+	p.earned += earned
+	return earned
+end
+
+return Economy
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="5">
+        <Properties>
+          <string name="Name">SavePolicy</string>
+          <string name="Source"><![CDATA[--!strict
+-- Pure UpdateAsync transforms. An expired lease may be acquired on load;
+-- a save must still own its exact token and cannot steal another lease.
+local E = if script then require(script.Parent.Economy) else require('./Economy')
+local Policy = {}
+function Policy.acquire(old, token, now)
+	local p=if old==nil then E.new() else E.restore(old)
+	if not p then return nil end
+	if old and old._lease then
+		local lease=old._lease
+		if type(lease)~='table' or type(lease.token)~='string' or type(lease.at)~='number' or lease.at~=lease.at then return nil end
+		if lease.token~=token and now-lease.at<180 then return nil end
+	end
+	p._lease={token=token,at=now}
+	return p
+end
+function Policy.commit(old, snapshot, token, now, release)
+	if type(old)~='table' or type(old._lease)~='table' or old._lease.token~=token then return nil end
+	local p=E.restore(snapshot)
+	if not p then return nil end
+	p._lease=if release then nil else {token=token,at=now}
+	return p
+end
+return Policy
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="6">
+        <Properties>
+          <string name="Name">Format</string>
+          <string name="Source"><![CDATA[--!strict
+-- Format — ModuleScript at ReplicatedStorage/Modules/Format
+-- Abbreviates big numbers the way idle-game players expect: 1.2K, 3.4M, 5.6aa
+
+local Format = {}
+
+local SHORT = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc" }
+local ALPHA = "abcdefghijklmnopqrstuvwxyz"
+
+local function alphaSuffix(tier: number): string
+	-- after the named tiers we go aa, ab, ac ... zz (standard incremental notation)
+	local n = tier - #SHORT
+	local first = math.floor((n - 1) / 26) + 1
+	local second = ((n - 1) % 26) + 1
+	return ALPHA:sub(first, first) .. ALPHA:sub(second, second)
+end
+
+function Format.number(value: number): string
+	if value ~= value or value == math.huge then return "∞" end
+	local neg = value < 0
+	value = math.abs(value)
+	if value < 1000 then
+		local s = string.format("%.0f", value)
+		return (neg and "-" or "") .. s
+	end
+	local tier = math.floor(math.log(value, 1000))
+	local scaled = value / (1000 ^ tier)
+	local suffix = SHORT[tier + 1] or alphaSuffix(tier + 1)
+	-- 3 significant figures reads best on a phone screen
+	local s = if scaled < 10 then string.format("%.2f", scaled)
+		elseif scaled < 100 then string.format("%.1f", scaled)
+		else string.format("%.0f", scaled)
+	return (neg and "-" or "") .. s .. suffix
+end
+
+function Format.time(seconds: number): string
+	seconds = math.max(0, math.floor(seconds))
+	local h = math.floor(seconds / 3600)
+	local m = math.floor((seconds % 3600) / 60)
+	local s = seconds % 60
+	if h > 0 then return string.format("%dh %dm", h, m) end
+	if m > 0 then return string.format("%dm %ds", m, s) end
+	return string.format("%ds", s)
+end
+
+table.freeze(Format)
+return Format
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="7">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Folder" referent="8">
+      <Properties>
+        <string name="Name">CUPEC</string>
+      </Properties>
+      <Item class="Script" referent="9">
+        <Properties>
+          <string name="Name">Main</string>
+          <token name="RunContext">0</token>
+          <string name="Source"><![CDATA[--!strict
+local Players = game:GetService('Players')
+local RS = game:GetService('ReplicatedStorage')
+local Config = require(RS.CUPEC.Config)
+local Economy = require(RS.CUPEC.Economy)
+local Profiles = require(script.Parent.Profiles)
+local World = require(script.Parent.World)
+
+local remote = Instance.new('RemoteEvent')
+remote.Name, remote.Parent = 'Portfolio', RS.CUPEC
+local slots, lastAction, saveMode = {}, {}, {}
+local marketIndex, nextMarket = 1, os.clock()+Config.MarketSeconds
+local shuttingDown=false
+
+local function send(player, message, selected)
+	local p=Profiles.data[player]
+	if not p or not slots[player] or not player.Parent then return end
+	remote:FireClient(player, {
+		cash=p.cash, earned=p.earned, invested=p.invested, businesses=table.clone(p.businesses),
+		rate=Economy.rate(p,Config.Markets[marketIndex].factor), assets=Economy.assets(p),
+		market=Config.Markets[marketIndex].name, factor=Config.Markets[marketIndex].factor,
+		nextMarket=math.max(0,math.ceil(nextMarket-os.clock())), slot=slots[player],
+		message=message, selected=selected, saveMode=saveMode[player],
+	})
+end
+
+World.build(function(player,index,id)
+	if slots[player]~=index then send(player,'This is another player’s portfolio. Your deals are on your own plot.'); return end
+	send(player,nil,id)
+end)
+
+local function join(player)
+	local free=nil
+	for i,plot in World.plots do if not plot.owner then free=i; break end end
+	if not free then player:Kick('This district has four portfolios. Please join another server.'); return end
+	slots[player]=free
+	World.assign(free,player) -- reserve before the save load yields
+	player.CharacterAdded:Connect(function(character)
+		character:WaitForChild('HumanoidRootPart',10)
+		if slots[player] and character.Parent then World.teleport(free,character) end
+	end)
+	local p,mode=Profiles.load(player)
+	if not p then
+		if World.plots[free].owner==player then World.release(free) end
+		slots[player]=nil
+		player:Kick(mode)
+		return
+	end
+	if not player.Parent or shuttingDown then
+		Profiles.release(player)
+		if World.plots[free].owner==player then World.release(free) end
+		slots[player]=nil; return
+	end
+	saveMode[player]=mode
+	World.refresh(free,p)
+	if player.Character and player.Character:FindFirstChild('HumanoidRootPart') then World.teleport(free,player.Character) end
+	local stats=Instance.new('Folder')
+	stats.Name,stats.Parent='leaderstats',player
+	local net=Instance.new('IntValue')
+	net.Name,net.Parent='Portfolio value',stats
+	net.Value=math.floor(p.cash+Economy.assets(p))
+	send(player,'Welcome. Acquire Siam Works to put your first business to work.','factory')
+end
+
+remote.OnServerEvent:Connect(function(player,action,id)
+	if shuttingDown or Profiles.closing[player] or not Profiles.data[player] then return end
+	local now=os.clock()
+	if now-(lastAction[player] or -1)<0.15 then return end
+	lastAction[player]=now
+	if action=='sync' then send(player); return end
+	if type(action)~='string' or (action~='buy' and action~='improve') then return end
+	if type(id)~='string' or #id>32 then return end
+	local ok,message=Economy.transact(Profiles.data[player],action,id)
+	if ok then World.refresh(slots[player],Profiles.data[player]) end
+	send(player,message,id)
+end)
+
+Players.PlayerAdded:Connect(function(player) task.spawn(join,player) end)
+for _,player in Players:GetPlayers() do task.spawn(join,player) end
+Players.PlayerRemoving:Connect(function(player)
+	local index=slots[player]
+	slots[player],lastAction[player],saveMode[player]=nil,nil,nil
+	if index then World.release(index) end
+	Profiles.release(player)
+end)
+
+task.spawn(function()
+	local previous=os.clock()
+	while not shuttingDown do
+		task.wait(1)
+		local now=os.clock()
+		local delta=math.min(now-previous,5)
+		previous=now
+		if now>=nextMarket then
+			marketIndex=marketIndex%#Config.Markets+1
+			nextMarket=now+Config.MarketSeconds
+		end
+		for player,p in Profiles.data do
+			if not Profiles.closing[player] and slots[player] then
+				Economy.tick(p,delta,Config.Markets[marketIndex].factor)
+				local stats=player:FindFirstChild('leaderstats')
+				if stats then stats['Portfolio value'].Value=math.floor(p.cash+Economy.assets(p)) end
+				send(player)
+			end
+		end
+	end
+end)
+
+task.spawn(function()
+	while not shuttingDown do
+		task.wait(45)
+		for player in Profiles.data do
+			if not Profiles.closing[player] then
+				if not Profiles.save(player,false) then
+					Profiles.release(player)
+					player:Kick('Saving was interrupted. Please rejoin so we can protect your progress.')
+				end
+			end
+		end
+	end
+end)
+
+game:BindToClose(function()
+	shuttingDown=true
+	local pending=0
+	for player in Profiles.data do
+		pending+=1
+		task.spawn(function() Profiles.release(player); pending-=1 end)
+	end
+	local deadline=os.clock()+25
+	while pending>0 and os.clock()<deadline do task.wait(0.1) end
+end)
+print('[CUPEC] Acquisition District ready. Four portfolios; server-authoritative economy.')
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="10">
+        <Properties>
+          <string name="Name">Profiles</string>
+          <string name="Source"><![CDATA[--!strict
+-- Adapted from the upstream DataManager's session-lock / UpdateAsync pattern.
+-- Studio previews use memory only. Live servers refuse unavailable/corrupt saves.
+local DSS = game:GetService('DataStoreService')
+local RunService = game:GetService('RunService')
+local HttpService = game:GetService('HttpService')
+local E = require(game:GetService('ReplicatedStorage').CUPEC.Economy)
+local Policy = require(game:GetService('ReplicatedStorage').CUPEC.SavePolicy)
+local Profiles = { data = {}, closing = {}, busy = {} }
+local preview = RunService:IsStudio()
+local token = HttpService:GenerateGUID(false)
+local store = nil
+if not preview then
+	local ok, result = pcall(function() return DSS:GetDataStore('CUPEC_Acquisitions_v1') end)
+	if ok then store = result else warn('[CUPEC] Save store unavailable:', result) end
+end
+
+function Profiles.load(player)
+	if preview then
+		Profiles.data[player] = E.new()
+		return Profiles.data[player], 'LOCAL PREVIEW · saves are off'
+	end
+	if not store then return nil, 'Saving is unavailable. Please try again later.' end
+	local ok, raw = pcall(function()
+		return store:UpdateAsync('player_' .. player.UserId, function(old)
+			return Policy.acquire(old,token,os.time())
+		end)
+	end)
+	if not ok or not raw then return nil, 'Your save is unavailable or active on another server. Please rejoin in a few minutes.' end
+	local data = E.restore(raw)
+	if not data then return nil, 'Your save could not be read safely.' end
+	Profiles.data[player] = data
+	return data, 'ONLINE · autosave enabled'
+end
+
+function Profiles.save(player, release)
+	local deadline = os.clock() + 20
+	while Profiles.busy[player] and os.clock() < deadline do task.wait(0.1) end
+	if Profiles.busy[player] then return false end
+	local data = Profiles.data[player]
+	if not data then return true end
+	if preview then return true end
+	Profiles.busy[player] = true
+	local snapshot = E.restore(data)
+	local success = false
+	for attempt = 1, 3 do
+		local ok, result = pcall(function()
+			return store:UpdateAsync('player_' .. player.UserId, function(old)
+				return Policy.commit(old,snapshot,token,os.time(),release)
+			end)
+		end)
+		if ok and result then success = true; break end
+		task.wait(attempt)
+	end
+	Profiles.busy[player] = nil
+	if not success then warn('[CUPEC] Save failed for player', player.UserId) end
+	return success
+end
+
+function Profiles.release(player)
+	if Profiles.closing[player] then return end
+	Profiles.closing[player] = true
+	Profiles.save(player, true)
+	Profiles.data[player] = nil
+	Profiles.closing[player] = nil
+end
+
+return Profiles
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="11">
+        <Properties>
+          <string name="Name">World</string>
+          <string name="Source"><![CDATA[--!strict
+local Config = require(game:GetService('ReplicatedStorage').CUPEC.Config)
+local World = { plots = {} }
+local navy = Color3.fromRGB(23, 34, 53)
+local rose = Color3.fromRGB(226, 140, 156)
+local cream = Color3.fromRGB(244, 235, 219)
+local gold = Color3.fromRGB(222, 181, 112)
+local teal = Color3.fromRGB(75, 145, 137)
+
+local function part(parent, name, size, pos, color, material)
+	local p = Instance.new('Part')
+	p.Name, p.Size, p.Position, p.Color = name, size, pos, color
+	p.Anchored = true
+	p.Material = material or Enum.Material.SmoothPlastic
+	p.TopSurface, p.BottomSurface = Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
+	p.Parent = parent
+	return p
+end
+
+local function sign(parent, pos, size, text, bg)
+	local board = part(parent, 'Sign', size, pos, bg or navy)
+	local gui = Instance.new('SurfaceGui')
+	gui.Face, gui.PixelsPerStud = Enum.NormalId.Front, 35
+	gui.Parent = board
+	local label = Instance.new('TextLabel')
+	label.Size, label.BackgroundTransparency = UDim2.fromScale(1,1), 1
+	label.Font, label.TextColor3 = Enum.Font.GothamBold, cream
+	label.TextScaled, label.TextWrapped, label.Text = true, true, text
+	label.Parent = gui
+	local pad = Instance.new('UIPadding')
+	pad.PaddingLeft, pad.PaddingRight = UDim.new(0,12), UDim.new(0,12)
+	pad.PaddingTop, pad.PaddingBottom = UDim.new(0,6), UDim.new(0,6)
+	pad.Parent = label
+	return label
+end
+
+local function tree(parent, x, z)
+	part(parent, 'Trunk', Vector3.new(1.5,7,1.5), Vector3.new(x,4,z), Color3.fromRGB(112,89,67), Enum.Material.Wood)
+	local canopy = part(parent, 'Canopy', Vector3.new(8,9,8), Vector3.new(x,11,z), teal)
+	canopy.Shape = Enum.PartType.Ball
+end
+
+function World.build(onPrompt)
+	local root = Instance.new('Folder')
+	root.Name, root.Parent = 'CUPECDistrict', workspace
+	part(root, 'Island', Vector3.new(260,4,240), Vector3.new(0,-2,0), Color3.fromRGB(189,204,188), Enum.Material.Grass)
+	part(root, 'Boulevard', Vector3.new(244,0.3,26), Vector3.new(0,0.2,0), navy)
+	part(root, 'Crosswalk', Vector3.new(20,0.35,222), Vector3.new(0,0.25,0), cream)
+	for x = -110,110,20 do part(root, 'RoadMark', Vector3.new(8,0.1,0.4), Vector3.new(x,0.42,0), gold) end
+	for _, z in {-16,16} do part(root,'Kerb',Vector3.new(244,0.8,2),Vector3.new(0,0.4,z),cream) end
+	local plaza = part(root, 'CUPEC Plaza', Vector3.new(38,1,35), Vector3.new(0,0.5,-37), cream)
+	local spawn = Instance.new('SpawnLocation')
+	spawn.Size, spawn.Position, spawn.Anchored = Vector3.new(8,1,8), Vector3.new(0,1.3,-27), true
+	spawn.Transparency, spawn.Neutral, spawn.Duration = 1, true, 0
+	spawn.Parent = root
+	sign(root,Vector3.new(0,14,-50),Vector3.new(34,9,2),'CUPEC\nACQUISITION DISTRICT',navy)
+	sign(root,Vector3.new(0,6,-49),Vector3.new(34,4,1),'BUY ASSET VALUE. BUILD GLOBAL REACH.',rose)
+	for _, x in {-118,-12,12,118} do for _, z in {-103,-20,22,105} do tree(root,x,z) end end
+	for index, center in {Vector3.new(-67,0,-63), Vector3.new(67,0,-63), Vector3.new(-67,0,64), Vector3.new(67,0,64)} do
+		local model = Instance.new('Model')
+		model.Name, model.Parent = 'Portfolio'..index, root
+		part(model,'Courtyard',Vector3.new(96,0.5,76),center+Vector3.new(0,0.5,0),Color3.fromRGB(224,220,209))
+		local ownerLabel = sign(model,center+Vector3.new(0,6,-36),Vector3.new(48,6,1),'PORTFOLIO '..index..' · AVAILABLE',navy)
+		local plot = { model = model, label = ownerLabel, origin = center, buildings = {}, owner = nil }
+		World.plots[index] = plot
+		for i,d in Config.Businesses do
+			local origin = center + Vector3.new((i-2)*30,0,0)
+			local b = Instance.new('Model')
+			b.Name, b.Parent = d.id, model
+			local accent = ({rose,teal,gold})[i]
+			part(b,'Foundation',Vector3.new(26,1,27),origin+Vector3.new(0,1,0),navy)
+			local wall = part(b,'Building',Vector3.new(24,12,22),origin+Vector3.new(0,7,0),cream)
+			part(b,'Roof',Vector3.new(26,1.5,24),origin+Vector3.new(0,13.5,0),accent)
+			for _, x in {-8,8} do
+				local glass=part(b,'Window',Vector3.new(4,5,0.3),origin+Vector3.new(x,8,-11.2),Color3.fromRGB(80,130,150),Enum.Material.Glass)
+				glass.Transparency=0.2
+			end
+			part(b,'Door',Vector3.new(4,7,0.4),origin+Vector3.new(0,4.5,-11.3),navy)
+			local title = sign(b,origin+Vector3.new(0,17,0),Vector3.new(26,4,1),d.name,navy)
+			local status = sign(b,origin+Vector3.new(0,3,-17),Vector3.new(25,4,1),'FOR SALE · $'..d.cost,navy)
+			local pad=part(b,'DealDesk',Vector3.new(6,0.4,5),origin+Vector3.new(0,0.9,-24),accent,Enum.Material.Neon)
+			local prompt=Instance.new('ProximityPrompt')
+			prompt.ActionText, prompt.ObjectText = 'Inspect business', d.name
+			prompt.HoldDuration, prompt.MaxActivationDistance, prompt.RequiresLineOfSight = 0, 12, false
+			prompt.Parent=pad
+			prompt.Triggered:Connect(function(player) onPrompt(player,index,d.id) end)
+			local machines={}
+			if i==1 then
+				for j=1,2 do
+					local stack=part(b,'Chimney',Vector3.new(3,10,3),origin+Vector3.new(j*7-10,19,6),navy,Enum.Material.Metal)
+					table.insert(machines,stack)
+				end
+			elseif i==2 then
+				for j=1,3 do table.insert(machines,part(b,'Cargo',Vector3.new(6,3,4),origin+Vector3.new(j*7-14,3,17),accent)) end
+			else
+				part(b,'Tower',Vector3.new(12,9,12),origin+Vector3.new(0,18,3),accent)
+				local globe=part(b,'Globe',Vector3.new(7,7,7),origin+Vector3.new(0,26,3),teal,Enum.Material.Glass)
+				globe.Shape=Enum.PartType.Ball
+			end
+			plot.buildings[d.id]={wall=wall, status=status, accent=accent, prompt=prompt, origin=origin, model=b}
+		end
+	end
+	return plaza
+end
+
+function World.assign(index, player)
+	local p=World.plots[index]
+	p.owner=player
+	p.label.Text=string.upper(player.DisplayName)..' · PORTFOLIO '..index
+end
+
+function World.refresh(index, profile)
+	local p=World.plots[index]
+	for _,d in Config.Businesses do
+		local b=p.buildings[d.id]
+		local level=profile and profile.businesses[d.id]
+		b.wall.Color=if level~=nil then cream else Color3.fromRGB(155,160,160)
+		b.status.Text=if level~=nil then 'OWNED · '..level..'/2 IMPROVEMENTS' else 'FOR SALE · $'..d.cost
+		b.prompt.ActionText=if level~=nil then 'Review improvements' else 'Inspect acquisition'
+		for j=1,2 do
+			local marker=b.model:FindFirstChild('Improvement'..j)
+			if level~=nil and level>=j then
+				if not marker then part(b.model,'Improvement'..j,Vector3.new(3,1,3),b.origin+Vector3.new(j*5-7,15,0),gold,Enum.Material.Neon) end
+			elseif marker then marker:Destroy() end
+		end
+	end
+end
+
+function World.release(index)
+	local p=World.plots[index]
+	p.owner=nil
+	p.label.Text='PORTFOLIO '..index..' · AVAILABLE'
+	World.refresh(index,nil)
+end
+
+function World.teleport(index, character)
+	local center=World.plots[index].origin
+	character:PivotTo(CFrame.lookAt(center+Vector3.new(0,5,-29),center+Vector3.new(0,5,0)))
+end
+
+return World
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="12">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="13">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="LocalScript" referent="14">
+        <Properties>
+          <string name="Name">Main</string>
+          <string name="Source"><![CDATA[--!strict
+local Players=game:GetService('Players')
+local RS=game:GetService('ReplicatedStorage')
+local UIS=game:GetService('UserInputService')
+local GuiService=game:GetService('GuiService')
+local player=Players.LocalPlayer
+local modules=RS:WaitForChild('CUPEC')
+local Config=require(modules:WaitForChild('Config'))
+local Format=require(modules:WaitForChild('Format')) -- retained from the MIT upstream
+local remote=modules:WaitForChild('Portfolio')
+local navy=Color3.fromRGB(23,34,53)
+local panel=Color3.fromRGB(32,45,65)
+local cream=Color3.fromRGB(246,238,225)
+local muted=Color3.fromRGB(178,190,199)
+local rose=Color3.fromRGB(232,154,170)
+local gold=Color3.fromRGB(229,190,126)
+local teal=Color3.fromRGB(117,210,180)
+local state=nil
+local selected='factory'
+local collapsed=false
+local toastUntil=0
+local function create(class,parent,props)
+	local instance=Instance.new(class)
+	for k,v in props do instance[k]=v end
+	instance.Parent=parent
+	return instance
+end
+local function corner(p,r) create('UICorner',p,{CornerRadius=UDim.new(0,r or 12)}) end
+local function label(p,text,pos,size,fontSize,color)
+	return create('TextLabel',p,{Text=text,Position=pos,Size=size,TextSize=fontSize or 15,Font=Enum.Font.GothamMedium,
+		TextColor3=color or cream,TextXAlignment=Enum.TextXAlignment.Left,BackgroundTransparency=1,TextWrapped=true})
+end
+local function button(p,text,pos,size,color)
+	local b=create('TextButton',p,{Text=text,Position=pos,Size=size,BackgroundColor3=color or rose,
+		TextColor3=navy,Font=Enum.Font.GothamBold,TextSize=14,BorderSizePixel=0,AutoButtonColor=true})
+	corner(b,9)
+	return b
+end
+local function money(n) return '$'..Format.number(n or 0) end
+local gui=create('ScreenGui',player:WaitForChild('PlayerGui'),{Name='CUPEC',ResetOnSpawn=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling,IgnoreGuiInset=false})
+local top=create('Frame',gui,{Name='PortfolioHeader',Size=UDim2.new(1,-24,0,90),Position=UDim2.fromOffset(12,10),BackgroundColor3=navy,BorderSizePixel=0})
+corner(top)
+label(top,'CUPEC',UDim2.fromOffset(16,8),UDim2.fromOffset(100,28),24,rose).Font=Enum.Font.GothamBlack
+local strap=label(top,'ACQUISITION DISTRICT',UDim2.fromOffset(122,12),UDim2.new(1,-280,0,22),12,muted)
+local cash=label(top,'Connecting…',UDim2.fromOffset(16,43),UDim2.fromOffset(230,30),25,cream)
+local income=label(top,'',UDim2.fromOffset(246,44),UDim2.fromOffset(230,28),17,teal)
+local toggle=button(top,'PORTFOLIO',UDim2.new(1,-133,0,16),UDim2.fromOffset(118,44),cream)
+local market=label(top,'',UDim2.new(1,-348,0,51),UDim2.fromOffset(330,24),12,gold)
+market.TextXAlignment=Enum.TextXAlignment.Right
+
+local drawer=create('ScrollingFrame',gui,{Name='DealRoom',AnchorPoint=Vector2.new(0,1),Position=UDim2.new(0,12,1,-12),Size=UDim2.fromOffset(390,474),CanvasSize=UDim2.fromOffset(390,474),ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=4,ScrollBarImageColor3=rose,BackgroundColor3=navy,BorderSizePixel=0})
+corner(drawer)
+local scale=create('UIScale',drawer,{Scale=1})
+label(drawer,'YOUR NEXT MOVE',UDim2.fromOffset(18,12),UDim2.fromOffset(300,22),12,rose)
+local tabs={}
+for i,d in Config.Businesses do
+	local tab=button(drawer,tostring(i)..'  '..({'WORKS','RELAY','ATLAS'})[i],UDim2.fromOffset(18+(i-1)*120,42),UDim2.fromOffset(112,42),panel)
+	tab.TextColor3=cream
+	tabs[d.id]=tab
+	tab.Activated:Connect(function() selected=d.id; if state then state.selected=d.id end end)
+end
+local sector=label(drawer,'',UDim2.fromOffset(18,99),UDim2.fromOffset(350,18),11,rose)
+local name=label(drawer,'Loading your portfolio…',UDim2.fromOffset(18,121),UDim2.fromOffset(350,34),26)
+name.Font=Enum.Font.GothamBold
+local story=label(drawer,'The server is preparing your district.',UDim2.fromOffset(18,162),UDim2.fromOffset(350,54),14,muted)
+local metrics=create('Frame',drawer,{Position=UDim2.fromOffset(18,229),Size=UDim2.fromOffset(354,66),BackgroundColor3=panel,BorderSizePixel=0})
+corner(metrics,9)
+local metricA=label(metrics,'',UDim2.fromOffset(12,6),UDim2.fromOffset(160,49),14)
+local metricB=label(metrics,'',UDim2.fromOffset(178,6),UDim2.fromOffset(164,49),14,teal)
+local project=label(drawer,'',UDim2.fromOffset(18,309),UDim2.fromOffset(350,43),16,cream)
+local detail=label(drawer,'',UDim2.fromOffset(18,353),UDim2.fromOffset(350,26),13,muted)
+local action=button(drawer,'Connecting…',UDim2.fromOffset(18,389),UDim2.fromOffset(354,48),rose)
+local footer=label(drawer,'',UDim2.fromOffset(18,441),UDim2.fromOffset(354,20),10,muted)
+local toast=create('Frame',gui,{Name='Notice',AnchorPoint=Vector2.new(0.5,0),Position=UDim2.new(0.5,0,0,110),Size=UDim2.new(0.7,0,0,48),BackgroundColor3=navy,BorderSizePixel=0,Visible=false})
+corner(toast)
+local toastText=label(toast,'',UDim2.fromOffset(12,4),UDim2.new(1,-24,1,-8),14,cream)
+toastText.TextXAlignment=Enum.TextXAlignment.Center
+local hint=label(gui,'WASD to explore · E at a deal desk · P for portfolio',UDim2.new(1,-490,1,-45),UDim2.fromOffset(470,28),13,cream)
+hint.TextXAlignment=Enum.TextXAlignment.Right
+
+local function currentDef()
+	for _,d in Config.Businesses do if d.id==selected then return d end end
+	return Config.Businesses[1]
+end
+local function refresh()
+	if not state then return end
+	local d=currentDef()
+	local level=state.businesses[d.id]
+	cash.Text=money(state.cash)
+	income.Text='+'..money(state.rate)..' / sec'
+	market.Text=state.market..' · '..state.nextMarket..'s'
+	sector.Text=d.sector
+	name.Text=d.name
+	story.Text=d.story
+	metricA.Text=if level==nil then 'ASKING PRICE\n'..money(d.cost) else 'ASSET VALUE\n'..money(d.assets)
+	metricB.Text=if level==nil then ('PRICE / BOOK\n%.2fx'):format(d.cost/d.assets) else 'IMPROVEMENTS\n'..level..' / '..#d.projects
+	local nextProject=level~=nil and d.projects[level+1] or nil
+	local cost=d.cost
+	local available=true
+	if level==nil then
+		project.Text='Acquire the business'
+		detail.Text='Base cash flow: +'..money(d.income)..' / sec'
+		if d.id=='logistics' and state.businesses.factory==nil then available=false end
+		if d.id=='exports' and state.businesses.logistics==nil then available=false end
+		action.Text=if available then 'ACQUIRE · '..money(d.cost) else 'ACQUIRE THE PREVIOUS BUSINESS FIRST'
+	elseif nextProject then
+		cost=nextProject.cost
+		project.Text=nextProject.name
+		detail.Text=nextProject.detail
+		action.Text='FUND IMPROVEMENT · '..money(cost)
+	else
+		available=false
+		project.Text='Business fully improved'
+		detail.Text=if d.id=='exports' then 'You built a global portfolio. Keep growing cash flow.' else 'Use its cash flow to fund the next acquisition.'
+		action.Text='OPERATING AT FULL POTENTIAL'
+	end
+	local affordable=available and state.cash>=cost
+	action.BackgroundColor3=if affordable then rose else panel
+	action.TextColor3=if affordable then navy else muted
+	footer.Text=state.saveMode..' · Portfolio '..state.slot
+	for id,tab in tabs do
+		tab.BackgroundColor3=if id==selected then cream else panel
+		tab.TextColor3=if id==selected then navy else muted
+	end
+end
+
+action.Activated:Connect(function()
+	if state then remote:FireServer(if state.businesses[selected]==nil then 'buy' else 'improve',selected) end
+end)
+toggle.Activated:Connect(function() collapsed=not collapsed; drawer.Visible=not collapsed end)
+UIS.InputBegan:Connect(function(input,processed)
+	if not processed and input.KeyCode==Enum.KeyCode.P then collapsed=not collapsed; drawer.Visible=not collapsed end
+end)
+remote.OnClientEvent:Connect(function(snapshot)
+	state=snapshot
+	if snapshot.selected then selected=snapshot.selected; collapsed=false; drawer.Visible=true end
+	if snapshot.message then
+		toastText.Text=snapshot.message
+		toast.Visible=true
+		toastUntil=os.clock()+5
+	end
+	refresh()
+end)
+local function resize()
+	local camera=workspace.CurrentCamera
+	if not camera then return end
+	local size=camera.ViewportSize
+	local inset=GuiService:GetGuiInset()
+	scale.Scale=math.min(1,(size.X-24)/390)
+	local small=size.X<700
+	local headerHeight=if small then 118 else 90
+	top.Size=UDim2.new(1,-24,0,headerHeight)
+	cash.Position=UDim2.fromOffset(16,if small then 53 else 43)
+	drawer.Size=UDim2.fromOffset(390,math.min(474,math.max(100,(size.Y-inset.Y-headerHeight-45)/scale.Scale)))
+	toast.Position=UDim2.new(0.5,0,0,headerHeight+20)
+	strap.Visible=not small
+	income.Position=if small then UDim2.fromOffset(16,83) else UDim2.fromOffset(246,44)
+	income.TextSize=if small then 14 else 17
+	market.Visible=not small
+	hint.Visible=not UIS.TouchEnabled and size.X>900
+end
+task.spawn(function()
+	while gui.Parent do
+		refresh(); resize()
+		if toast.Visible and os.clock()>toastUntil then toast.Visible=false end
+		if not state then remote:FireServer('sync') end
+		task.wait(0.3)
+	end
+end)
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="15">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <float name="Gravity">196.2</float>
+      <bool name="NeedsPivotMigration">false</bool>
+    </Properties>
+  </Item>
+</roblox>

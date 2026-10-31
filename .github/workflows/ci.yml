@@ -1,110 +1,30 @@
-name: CI
-
+name: CUPEC build and domain tests
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
-
+permissions:
+  contents: read
 jobs:
-  syntax:
-    name: Luau syntax
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - name: Install Luau
+      - uses: actions/checkout@v4
+      - name: Download pinned tools from their official repositories
         run: |
-          set -e
-          mkdir -p "$HOME/.bin"; echo "$HOME/.bin" >> "$GITHUB_PATH"
-          curl -sSL -o /tmp/luau.zip https://github.com/luau-lang/luau/releases/latest/download/luau-ubuntu.zip
-          unzip -o -q /tmp/luau.zip -d "$HOME/.bin"
-          chmod +x "$HOME/.bin"/luau*
-      - name: Compile every module
+          set -eu
+          mkdir -p /tmp/cupec-tools
+          curl -fL --retry 2 -o /tmp/luau.zip https://github.com/luau-lang/luau/releases/download/0.745/luau-ubuntu.zip
+          unzip -q /tmp/luau.zip -d /tmp/cupec-tools
+          curl -fL --retry 2 -o /tmp/rojo.zip https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-linux-x86_64.zip
+          unzip -q /tmp/rojo.zip -d /tmp/cupec-tools
+          chmod +x /tmp/cupec-tools/*
+      - name: Verify economy, save transforms and syntax
         run: |
-          fail=0
-          for f in $(find src -name '*.luau' | sort); do
-            out=$(luau-compile --binary "$f" 2>&1 >/dev/null)
-            if [ -n "$out" ]; then echo "::error file=$f::$out"; fail=1; else echo "ok $f"; fi
-          done
-          exit $fail
-
-  lint:
-    name: Lint & format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install Rokit toolchain
-        uses: CompeyDev/setup-rokit@v0.2.1
-        continue-on-error: true
-
-      - name: Install tools manually (fallback)
-        run: |
-          set -e
-          mkdir -p "$HOME/.bin"
-          echo "$HOME/.bin" >> "$GITHUB_PATH"
-
-          SELENE=0.27.1
-          curl -sSL -o /tmp/selene.zip \
-            "https://github.com/Kampfkarren/selene/releases/download/${SELENE}/selene-${SELENE}-linux.zip"
-          unzip -o -q /tmp/selene.zip -d "$HOME/.bin"
-          chmod +x "$HOME/.bin/selene"
-
-          STYLUA=v0.20.0
-          curl -sSL -o /tmp/stylua.zip \
-            "https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA}/stylua-linux-x86_64.zip"
-          unzip -o -q /tmp/stylua.zip -d "$HOME/.bin"
-          chmod +x "$HOME/.bin/stylua"
-
-      - name: Fetch Roblox standard library
-        run: |
-          curl -sSL -o roblox.toml \
-            https://raw.githubusercontent.com/Kampfkarren/selene/main/selene-lib/default_std/roblox.toml || true
-
-      - name: selene
-        run: selene src || true
-
-      - name: stylua --check
-        run: stylua --check src || true
-
-  balance:
-    name: Balance simulation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Run progression simulator
-        run: python3 tools/balance_sim.py --hours 6 --check
-
-      - name: Simulate a paying player
-        run: python3 tools/balance_sim.py --hours 6 --mult 2
-
-  build:
-    name: Rojo build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install Rojo
-        run: |
-          set -e
-          mkdir -p "$HOME/.bin"
-          echo "$HOME/.bin" >> "$GITHUB_PATH"
-          ROJO=7.4.4
-          curl -sSL -o /tmp/rojo.zip \
-            "https://github.com/rojo-rbx/rojo/releases/download/v${ROJO}/rojo-${ROJO}-linux-x86_64.zip"
-          unzip -o -q /tmp/rojo.zip -d "$HOME/.bin"
-          chmod +x "$HOME/.bin/rojo"
-
-      - name: Build place file
-        run: rojo build default.project.json --output SlimeFactoryTycoon.rbxlx
-
-      - name: Upload place artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: SlimeFactoryTycoon-place
-          path: SlimeFactoryTycoon.rbxlx
-          retention-days: 30
+          set -eu
+          /tmp/cupec-tools/luau cupec/tests/economy.luau
+          /tmp/cupec-tools/luau cupec/tests/saves.luau
+          find cupec -name '*.luau' -print0 | xargs -0 /tmp/cupec-tools/luau-compile --null
+      - name: Build Roblox place
+        run: /tmp/cupec-tools/rojo build default.project.json -o /tmp/CUPEC-Acquisition-District.rbxlx
