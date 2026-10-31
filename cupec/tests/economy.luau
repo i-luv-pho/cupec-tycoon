@@ -31,7 +31,8 @@ end
 local sim = E.new()
 local elapsed, unlocked = 0, {}
 while elapsed < 900 do
-	for _, d in C.Businesses do
+	for i, d in C.Businesses do
+		if i>3 then break end
 		if sim.businesses[d.id] == nil then
 			if E.transact(sim,'buy',d.id) then unlocked[d.id] = elapsed end
 		else E.transact(sim,'improve',d.id) end

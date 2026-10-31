@@ -1,7 +1,7 @@
 name: CUPEC build and domain tests
 on:
   push:
-    branches: [main]
+    branches: [main, city-expansion]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -25,6 +25,7 @@ jobs:
           set -eu
           /tmp/cupec-tools/luau cupec/tests/economy.luau
           /tmp/cupec-tools/luau cupec/tests/saves.luau
+          /tmp/cupec-tools/luau cupec/tests/city.luau
           find cupec -name '*.luau' -print0 | xargs -0 /tmp/cupec-tools/luau-compile --null
       - name: Build Roblox place
         run: /tmp/cupec-tools/rojo build default.project.json -o /tmp/CUPEC-Acquisition-District.rbxlx

@@ -4,7 +4,7 @@ local Config = if script then require(script.Parent.Config) else require('./Conf
 local Economy = {}
 
 function Economy.new()
-	return { cash = Config.StartCash, earned = 0, invested = 0, businesses = {}, version = 1 }
+	return { cash = Config.StartCash, earned = 0, invested = 0, businesses = {}, operations = 0, version = 1 }
 end
 
 local function finite(n)
@@ -25,6 +25,10 @@ function Economy.restore(raw)
 	if type(raw.businesses) ~= 'table' then return nil end
 	local p = Economy.new()
 	p.cash, p.earned, p.invested = raw.cash, raw.earned, raw.invested
+	if raw.operations ~= nil then
+		if not finite(raw.operations) or raw.operations < 0 or raw.operations % 1 ~= 0 or raw.operations > 1e9 then return nil end
+		p.operations = raw.operations
+	end
 	for id, level in raw.businesses do
 		local d = Economy.definition(id)
 		if not d or not finite(level) or level % 1 ~= 0 or level < 0 or level > #d.projects then return nil end
@@ -65,8 +69,7 @@ function Economy.transact(p, action, id)
 	local level = p.businesses[id]
 	if action == 'buy' then
 		if level ~= nil then return false, 'You already own this business.' end
-		if id == 'logistics' and p.businesses.factory == nil then return false, 'Acquire Siam Works first.' end
-		if id == 'exports' and p.businesses.logistics == nil then return false, 'Acquire Relay Logistics first.' end
+		if d.requires and p.businesses[d.requires] == nil then return false, 'Acquire ' .. Economy.definition(d.requires).name .. ' first.' end
 		if p.cash < d.cost then return false, 'Earn more cash before acquiring this business.' end
 		p.cash -= d.cost
 		p.invested += d.cost
@@ -83,6 +86,18 @@ function Economy.transact(p, action, id)
 		return true, project.name .. ' complete!'
 	end
 	return false, 'Unknown action.'
+end
+
+function Economy.operate(p, id)
+	local d = Economy.definition(id)
+	if not d or p.businesses[id] == nil then return false, 'Acquire this business before running operations.' end
+	local rate = d.income
+	for i=1,p.businesses[id] do rate += d.projects[i].addIncome end
+	local reward = math.min(rate * Config.OperationSeconds, Config.MaxCash-p.cash, Config.MaxCash-p.earned)
+	p.cash += reward
+	p.earned += reward
+	p.operations = math.min((p.operations or 0)+1,1e9)
+	return true, 'Operation completed at '..d.name..'! +$'..math.floor(reward)
 end
 
 function Economy.tick(p, seconds, factor)

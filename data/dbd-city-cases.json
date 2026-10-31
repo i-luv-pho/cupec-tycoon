@@ -1,0 +1,270 @@
+{
+  "source_file": "/Volumes/Untitled/CUPEC-Company-Intelligence/data/public-company-profiles.json",
+  "source_sha256": "4163f7a9e4174b0294bbecc453d231fc4862d38fa0c182eb46330e2215f11b0e",
+  "cases": [
+    {
+      "game_id": "factory",
+      "fictional_name": "Epoch Asia Machinery",
+      "sector_label": "MACHINERY SUPPLY",
+      "building_kind": "depot",
+      "registration_id": "0105566010287",
+      "source_name_th": "บริษัท เอปิค เอเชีย แมชชีนเนอรี่ จำกัด",
+      "registered_tsic": "46599",
+      "registered_objective_th": "ประกอบกิจการจำหน่าย นำเข้า ส่งออก เครื่องจักรและชิ้นส่วนอุปกรณ์",
+      "financial_year": 2024,
+      "currency": "THB",
+      "reported": {
+        "revenue": 22894654.92,
+        "assets": 40324774.74,
+        "liabilities": 46895715.38,
+        "equity": -6570940.64,
+        "net_profit": -7006646.52
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50105566010287",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "logistics",
+      "fictional_name": "Olympia Industrial",
+      "sector_label": "INDUSTRIAL SUPPLY",
+      "building_kind": "depot",
+      "registration_id": "0135566000681",
+      "source_name_th": "บริษัท โอลิมพลัส อินดัสเทรียล ซัพพลาย จำกัด",
+      "registered_tsic": "46639",
+      "registered_objective_th": "ประกอบกิจการธุรกิจนำเข้าลวดเชื่อมเหล็กจากต่างประเทศมาขายในเมืองไทยพร้อมอะไหล่เกี่ยวกับงานเชื่อม",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 33460271.48,
+        "assets": 17558041.57,
+        "liabilities": 11928556.65,
+        "equity": 5629484.92,
+        "net_profit": 192003.55
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50135566000681",
+      "checked_at": "2026-10-26T18:22:34.334960+00:00",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "exports",
+      "fictional_name": "Fresh Horizon Trade",
+      "sector_label": "FOOD TRADING",
+      "building_kind": "depot",
+      "registration_id": "0115567023439",
+      "source_name_th": "บริษัท เฟรช เทรดเดอร์ (ประเทศไทย) จำกัด",
+      "registered_tsic": "47213",
+      "registered_objective_th": "ประกอบกิจการร้านขายปลีกผักและผลไม้",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 2627884.17,
+        "assets": 1438748.26,
+        "liabilities": 92235.11,
+        "equity": 1346513.15,
+        "net_profit": 127316.97
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50115567023439",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "cafe",
+      "fictional_name": "Dewa Foods",
+      "sector_label": "FOOD INGREDIENTS",
+      "building_kind": "retail",
+      "registration_id": "0105566017958",
+      "source_name_th": "บริษัท ดีว่า ฟู้ดส์ จำกัด",
+      "registered_tsic": "46319",
+      "registered_objective_th": "การขายส่งผลิตภัณฑ์อาหารอื่นๆซึ่งมิได้จัดประเภทไว้ในที่อื่น",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 199611780.74,
+        "assets": 6369644.21,
+        "liabilities": 627972.27,
+        "equity": 5741671.94,
+        "net_profit": 469462.58
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50105566017958",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "market",
+      "fictional_name": "Astra Packaging",
+      "sector_label": "PACKAGING",
+      "building_kind": "factory",
+      "registration_id": "0105565010038",
+      "source_name_th": "บริษัท เอเชีย แพ็คเกจจิ้ง กรุ๊ป จำกัด",
+      "registered_tsic": "16291",
+      "registered_objective_th": "ประกอบกิจการผลิต ขายส่ง สินค้าประเภทบรรจุภัณฑ์ใส่จิวเวลรี่",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 30570882.17,
+        "assets": 17062547.98,
+        "liabilities": 14550803.23,
+        "equity": 2511744.75,
+        "net_profit": -230977.34
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50105565010038",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "solar",
+      "fictional_name": "Meridian Green Steel",
+      "sector_label": "STEEL",
+      "building_kind": "factory",
+      "registration_id": "0105566125408",
+      "source_name_th": "บริษัท  เมอแรนติ กรีน สตีล (ประเทศไทย) จำกัด",
+      "registered_tsic": "24109",
+      "registered_objective_th": "ประกอบกิจการโรงงานผลิตเหล็กกล้าทุกชนิด",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 5591071.32,
+        "assets": 102208620.43,
+        "liabilities": 82423143.25,
+        "equity": 19785477.18,
+        "net_profit": -52706140.85
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50105566125408",
+      "checked_at": "2026-10-26T18:22:43.790438+00:00",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "hotel",
+      "fictional_name": "Connecta Auto",
+      "sector_label": "AUTO COMPONENTS",
+      "building_kind": "factory",
+      "registration_id": "0145567006224",
+      "source_name_th": "บริษัท คอนเนกซ์ ออโต้ (ประเทศไทย) จำกัด",
+      "registered_tsic": "29302",
+      "registered_objective_th": "ประกอบกิจการผลิตและประกอบส่วนประกอบที่ใช้ไฟฟ้าของยานยนต์ ชิ้นส่วนยานยนต์ และชุดสายไฟสำหรับยานยนต์ ค้า รวมทั้งการนำเข้าและส่งออก",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 11368757.99,
+        "assets": 87229492.46,
+        "liabilities": 25312508.34,
+        "equity": 61916984.12,
+        "net_profit": -16452869.25
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50145567006224",
+      "checked_at": "2026-10-26T18:24:23.171163+00:00",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "foods",
+      "fictional_name": "Sprout & Bean",
+      "sector_label": "FOOD PRODUCTION",
+      "building_kind": "factory",
+      "registration_id": "0105565043521",
+      "source_name_th": "บริษัท แพลนท์ แอนด์ บีน (ประเทศไทย) จำกัด",
+      "registered_tsic": "46101",
+      "registered_objective_th": "นำเข้า/ส่งออก วัตถุดิบ วิจัยด้านเทคโนโลยี เพื่อการพัฒนา ผลิต รับจ้างผลิต ขนส่งและจัดจำหน่ายผลิตภัณฑ์เนื่องจากพืช",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 24008556.22,
+        "assets": 285013648.1,
+        "liabilities": 153220872.41,
+        "equity": 131792775.69,
+        "net_profit": -78343670.99
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50105565043521",
+      "checked_at": "2026-10-26T18:22:42.322872+00:00",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "data",
+      "fictional_name": "Luma Electronics",
+      "sector_label": "ELECTRONICS",
+      "building_kind": "factory",
+      "registration_id": "0125566011470",
+      "source_name_th": "บริษัท แอลพีดับบลิว อิเล็กทรอนิกส์ จำกัด",
+      "registered_tsic": "27320",
+      "registered_objective_th": "ประกอบกิจการโรงงานผลิตหรือประกอบสายไฟฟ้า อุปกรณ์ไฟฟ้า",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 22177531,
+        "assets": 219207198,
+        "liabilities": 193455703,
+        "equity": 25751495,
+        "net_profit": -23014113
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50125566011470",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "clinic",
+      "fictional_name": "Nara Medical Systems",
+      "sector_label": "MEDICAL EQUIPMENT",
+      "building_kind": "factory",
+      "registration_id": "0107565000654",
+      "source_name_th": "บริษัท นำวิวัฒน์ เมดิคอล คอร์ปอเรชั่น จำกัด (มหาชน)",
+      "registered_tsic": "46441",
+      "registered_objective_th": "ประกอบกิจการค้าเครื่องมือแพทย์ที่เกี่ยวข้องกับการทำให้อุปกรณ์สะอาดและปราศจากเชื้อ",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 996150755.6,
+        "assets": 2402132226.63,
+        "liabilities": 422180266.92,
+        "equity": 1979951959.71,
+        "net_profit": 87164207.47
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/70107565000654",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "port",
+      "fictional_name": "Kinetic Auto Materials",
+      "sector_label": "AUTO MATERIALS",
+      "building_kind": "factory",
+      "registration_id": "0215566011711",
+      "source_name_th": "บริษัท คิเทคช์ ออโต้ พาร์ทส์ แมททีเรียลส์ (ไทยแลนด์) จำกัด",
+      "registered_tsic": "22299",
+      "registered_objective_th": "วิจัย พัฒนา ผลิต แปรรูป จำหน่ายและส่งออกผลิตภัณฑ์พลาสติกวิศวกรรม    ผลิตภัณฑ์เม็ดพลาสติก ผลิตภัณฑ์มาสเตอร์แบทช์แม่สีชนิดเม็ด แม่สีฝุ่นพลาสติกวัตถุดิบเพื่อเติมแต่งขึ้นรูปพลาสติก รวมถึงผลิตภัณฑ์พลาสติกอื่นๆและผลิตภัณฑ์ยาง นำเข้า ส่งออก และจำหน่ายผลิตภัณฑ์พลาสติกจากวัสดุ",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 227435430.67,
+        "assets": 525642339.45,
+        "liabilities": 311425703.27,
+        "equity": 214216636.18,
+        "net_profit": 2955768.7
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/50215566011711",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    },
+    {
+      "game_id": "hq",
+      "fictional_name": "Kora Foods",
+      "sector_label": "FOOD PRODUCTION",
+      "building_kind": "office",
+      "registration_id": "0107565000735",
+      "source_name_th": "บริษัท เคซีจี คอร์ปอเรชั่น  จำกัด (มหาชน)",
+      "registered_tsic": "46319",
+      "registered_objective_th": "ประกอบกิจการจำหน่ายอาหาร ผลิตภัณฑ์นม พืชและสัตว์",
+      "financial_year": 2025,
+      "currency": "THB",
+      "reported": {
+        "revenue": 8576047497,
+        "assets": 6302883338,
+        "liabilities": 3092540645,
+        "equity": 3210342693,
+        "net_profit": 503601168
+      },
+      "source_url": "https://datawarehouse.dbd.go.th/company/profile/70107565000735",
+      "checked_at": "2026-10-27",
+      "basis": "Previously captured DBD public summary; not freshly verified. Game name, purchase price, income per second and upgrade scenarios are fictional."
+    }
+  ]
+}
