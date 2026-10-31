@@ -48,7 +48,7 @@ Verified tooling: Rojo 7.7.1 and Luau 0.745. On the development Mac they are in 
 - Buy and improve all three businesses: full client/server flow passed after fixing burst request handling. Own-plot spawns were verified.
 - Two-client tests observed distinct spawns and independent profiles. A complete multiplayer acceptance pass is still pending: the initial runs caught dropped upgrades, then later Studio client launches timed out. No full multiplayer pass is claimed.
 - On a private published test experience, verify leave/rejoin persistence, autosave, server handoff, and store outage behavior. Studio's pure tests validate the lease transforms, not Roblox cloud availability.
-- Maximum players is configured to 4. The place is uploaded privately; genre is Simulation / Tycoon and a gameplay overview thumbnail is submitted. Public release is waiting at Roblox’s QR age-verification gate. Player-app acceptance and public join remain pending.
+- Maximum players is configured to 4. The place is uploaded privately; genre is Simulation / Tycoon and a gameplay overview thumbnail is submitted. Identity verification is complete. Public release is blocked by Roblox’s minimum account age of two days, reached on 3 November 2026 at 05:40:57 Bangkok time. A one-time retry is scheduled for 05:45. Player-app acceptance and public join remain pending.
 
 Do not describe the game as live until an actual Roblox URL and player join have been verified.
 
