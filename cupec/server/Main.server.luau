@@ -8,7 +8,7 @@ local World = require(script.Parent.World)
 
 local remote = Instance.new('RemoteEvent')
 remote.Name, remote.Parent = 'Portfolio', RS.CUPEC
-local slots, lastAction, saveMode = {}, {}, {}
+local slots, lastAction, lastSync, saveMode = {}, {}, {}, {}
 local marketIndex, nextMarket = 1, os.clock()+Config.MarketSeconds
 local shuttingDown=false
 
@@ -65,9 +65,16 @@ end
 remote.OnServerEvent:Connect(function(player,action,id)
 	if shuttingDown or Profiles.closing[player] or not Profiles.data[player] then return end
 	local now=os.clock()
-	if now-(lastAction[player] or -1)<0.15 then return end
-	lastAction[player]=now
-	if action=='sync' then send(player); return end
+	if action=='sync' then
+		if now-(lastSync[player] or -1)>=0.5 then lastSync[player]=now; send(player) end
+		return
+	end
+	local bucket=lastAction[player] or {at=now,tokens=6}
+	bucket.tokens=math.min(6,bucket.tokens+(now-bucket.at)*6)
+	bucket.at=now
+	lastAction[player]=bucket
+	if bucket.tokens<1 then return end
+	bucket.tokens-=1
 	if type(action)~='string' or (action~='buy' and action~='improve') then return end
 	if type(id)~='string' or #id>32 then return end
 	local ok,message=Economy.transact(Profiles.data[player],action,id)
@@ -79,7 +86,7 @@ Players.PlayerAdded:Connect(function(player) task.spawn(join,player) end)
 for _,player in Players:GetPlayers() do task.spawn(join,player) end
 Players.PlayerRemoving:Connect(function(player)
 	local index=slots[player]
-	slots[player],lastAction[player],saveMode[player]=nil,nil,nil
+	slots[player],lastAction[player],lastSync[player],saveMode[player]=nil,nil,nil,nil
 	if index then World.release(index) end
 	Profiles.release(player)
 end)

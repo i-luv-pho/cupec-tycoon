@@ -1,19 +1,19 @@
-# CUPEC Acquisition District
+# CUPEC Acquisition Tycoon
 
 A Roblox prototype about buying useful assets, fixing operations, and building global sales. Forked from [Slime Factory Tycoon](https://github.com/DLinacre/slime-factory-tycoon), under the retained MIT license.
 
 ## Current status
 
-- Source, economy tests, save-lease tests, and a Studio-openable place are prepared.
+- Source, 42 passing domain assertions, and a Studio-openable place are prepared. The complete acquisition/improvement flow passed an in-engine server/client acceptance run.
 - Roblox Studio is installed on the development Mac.
-- **Engine playtesting and Roblox upload/release are pending account sign-in.** No public game URL exists yet.
+- **Uploaded to Roblox as CUPEC Acquisition Tycoon. Public release is pending Roblox account eligibility.** Place ID: `135362854447570`; universe ID: `10774083670`.
 - No paid products, pets, paid random rewards, ads, external web requests, or real-money trading are enabled.
 
 ## Play locally
 
 1. Sign into Roblox Studio.
 2. Open `releases/CUPEC-Acquisition-District.rbxlx`.
-3. Press **F5 / Test**. The district is generated at runtime, so an empty edit viewport before Play is expected.
+3. Press **F5 / Test**. The committed release export includes an edit-mode preview. Runtime regenerates the district on each server start. A fresh Rojo build contains scripts only until Play.
 4. Use WASD to walk. Use the Portfolio panel or press E at your own business desk. P hides/shows the panel.
 5. Acquire Siam Works for $300 of your $450 starting cash. Fund production improvements, buy Relay Logistics, then Atlas Exports.
 
@@ -44,11 +44,11 @@ Verified tooling: Rojo 7.7.1 and Luau 0.745. On the development Mac they are in 
 
 ## Remaining acceptance checks
 
-- Open the place and inspect visuals in Studio at desktop and phone sizes.
-- Buy, improve, respawn, walk to a desk, and play through all three acquisitions.
-- Run Server & Clients with 2-4 clients. Verify different plots, independent money, join/leave reuse, and rejection of other players' desk access.
+- Desktop and portrait layouts inspected in Studio; physical phone playtest remains.
+- Buy and improve all three businesses: full client/server flow passed after fixing burst request handling. Own-plot spawns were verified.
+- Two-client tests observed distinct spawns and independent profiles. A complete multiplayer acceptance pass is still pending: the initial runs caught dropped upgrades, then later Studio client launches timed out. No full multiplayer pass is claimed.
 - On a private published test experience, verify leave/rejoin persistence, autosave, server handoff, and store outage behavior. Studio's pure tests validate the lease transforms, not Roblox cloud availability.
-- Configure maximum players to 4. Confirm content questionnaire answers and account eligibility, upload privately, test through the player app, then release publicly.
+- Maximum players is configured to 4. The place is uploaded privately; genre is Simulation / Tycoon and a gameplay overview thumbnail is submitted. Public release is waiting at Roblox’s QR age-verification gate. Player-app acceptance and public join remain pending.
 
 Do not describe the game as live until an actual Roblox URL and player join have been verified.
 

@@ -4,6 +4,11 @@ local RS=game:GetService('ReplicatedStorage')
 local UIS=game:GetService('UserInputService')
 local GuiService=game:GetService('GuiService')
 local player=Players.LocalPlayer
+local StarterGui=game:GetService('StarterGui')
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false)
+pcall(function() StarterGui:SetCore('ChatActive',false) end)
+player.CameraMinZoomDistance=14
+player.CameraMaxZoomDistance=70
 local modules=RS:WaitForChild('CUPEC')
 local Config=require(modules:WaitForChild('Config'))
 local Format=require(modules:WaitForChild('Format')) -- retained from the MIT upstream
@@ -45,7 +50,8 @@ local strap=label(top,'ACQUISITION DISTRICT',UDim2.fromOffset(122,12),UDim2.new(
 local cash=label(top,'Connecting…',UDim2.fromOffset(16,43),UDim2.fromOffset(230,30),25,cream)
 local income=label(top,'',UDim2.fromOffset(246,44),UDim2.fromOffset(230,28),17,teal)
 local toggle=button(top,'PORTFOLIO',UDim2.new(1,-133,0,16),UDim2.fromOffset(118,44),cream)
-local market=label(top,'',UDim2.new(1,-348,0,51),UDim2.fromOffset(330,24),12,gold)
+toggle.Name='TogglePortfolio'
+local market=label(top,'',UDim2.new(1,-348,0,66),UDim2.fromOffset(330,18),12,gold)
 market.TextXAlignment=Enum.TextXAlignment.Right
 
 local drawer=create('ScrollingFrame',gui,{Name='DealRoom',AnchorPoint=Vector2.new(0,1),Position=UDim2.new(0,12,1,-12),Size=UDim2.fromOffset(390,474),CanvasSize=UDim2.fromOffset(390,474),ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=4,ScrollBarImageColor3=rose,BackgroundColor3=navy,BorderSizePixel=0})
@@ -56,6 +62,7 @@ local tabs={}
 for i,d in Config.Businesses do
 	local tab=button(drawer,tostring(i)..'  '..({'WORKS','RELAY','ATLAS'})[i],UDim2.fromOffset(18+(i-1)*120,42),UDim2.fromOffset(112,42),panel)
 	tab.TextColor3=cream
+	tab.Name='Tab_'..d.id
 	tabs[d.id]=tab
 	tab.Activated:Connect(function() selected=d.id; if state then state.selected=d.id end end)
 end
@@ -70,6 +77,7 @@ local metricB=label(metrics,'',UDim2.fromOffset(178,6),UDim2.fromOffset(164,49),
 local project=label(drawer,'',UDim2.fromOffset(18,309),UDim2.fromOffset(350,43),16,cream)
 local detail=label(drawer,'',UDim2.fromOffset(18,353),UDim2.fromOffset(350,26),13,muted)
 local action=button(drawer,'Connecting…',UDim2.fromOffset(18,389),UDim2.fromOffset(354,48),rose)
+action.Name='Action'
 local footer=label(drawer,'',UDim2.fromOffset(18,441),UDim2.fromOffset(354,20),10,muted)
 local toast=create('Frame',gui,{Name='Notice',AnchorPoint=Vector2.new(0.5,0),Position=UDim2.new(0.5,0,0,110),Size=UDim2.new(0.7,0,0,48),BackgroundColor3=navy,BorderSizePixel=0,Visible=false})
 corner(toast)

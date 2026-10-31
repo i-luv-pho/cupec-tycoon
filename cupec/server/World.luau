@@ -41,6 +41,9 @@ local function tree(parent, x, z)
 end
 
 function World.build(onPrompt)
+	local previous=workspace:FindFirstChild('CUPECDistrict')
+	if previous then previous:Destroy() end
+	World.plots={}
 	local root = Instance.new('Folder')
 	root.Name, root.Parent = 'CUPECDistrict', workspace
 	part(root, 'Island', Vector3.new(260,4,240), Vector3.new(0,-2,0), Color3.fromRGB(189,204,188), Enum.Material.Grass)
@@ -61,7 +64,12 @@ function World.build(onPrompt)
 		model.Name, model.Parent = 'Portfolio'..index, root
 		part(model,'Courtyard',Vector3.new(96,0.5,76),center+Vector3.new(0,0.5,0),Color3.fromRGB(224,220,209))
 		local ownerLabel = sign(model,center+Vector3.new(0,6,-36),Vector3.new(48,6,1),'PORTFOLIO '..index..' · AVAILABLE',navy)
-		local plot = { model = model, label = ownerLabel, origin = center, buildings = {}, owner = nil }
+		local plotSpawn=Instance.new('SpawnLocation')
+		plotSpawn.Name,plotSpawn.Size,plotSpawn.Anchored='PortfolioSpawn',Vector3.new(6,1,6),true
+		plotSpawn.CFrame=CFrame.lookAt(center+Vector3.new(0,1.1,-29),center+Vector3.new(0,1.1,0))
+		plotSpawn.Transparency,plotSpawn.Neutral,plotSpawn.Duration=1,true,0
+		plotSpawn.Parent=model
+		local plot = { model = model, label = ownerLabel, origin = center, spawn=plotSpawn, buildings = {}, owner = nil }
 		World.plots[index] = plot
 		for i,d in Config.Businesses do
 			local origin = center + Vector3.new((i-2)*30,0,0)
@@ -106,6 +114,7 @@ end
 function World.assign(index, player)
 	local p=World.plots[index]
 	p.owner=player
+	player.RespawnLocation=p.spawn
 	p.label.Text=string.upper(player.DisplayName)..' · PORTFOLIO '..index
 end
 
