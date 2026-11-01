@@ -805,7 +805,7 @@ local gold=Color3.fromRGB(229,190,126)
 local teal=Color3.fromRGB(117,210,180)
 local state=nil
 local selected='factory'
-local collapsed=false
+local collapsed=UIS.TouchEnabled
 local showingCase=false
 local toastUntil=0
 local function create(class,parent,props)
@@ -841,6 +841,7 @@ market.TextXAlignment=Enum.TextXAlignment.Right
 
 local drawer=create('ScrollingFrame',gui,{Name='DealRoom',AnchorPoint=Vector2.new(0,1),Position=UDim2.new(0,12,1,-12),Size=UDim2.fromOffset(390,474),CanvasSize=UDim2.fromOffset(390,530),ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=4,ScrollBarImageColor3=rose,BackgroundColor3=navy,BorderSizePixel=0})
 corner(drawer)
+drawer.Visible=not collapsed
 local scale=create('UIScale',drawer,{Scale=1})
 label(drawer,'YOUR NEXT MOVE',UDim2.fromOffset(18,12),UDim2.fromOffset(300,22),12,rose)
 local tabs={}
@@ -848,6 +849,8 @@ local tabStrip=create('ScrollingFrame',drawer,{Name='BusinessTabs',Position=UDim
 for i,d in Config.Businesses do
 	local tab=button(tabStrip,tostring(i)..'  '..d.name,UDim2.fromOffset((i-1)*126,0),UDim2.fromOffset(120,40),panel)
 	tab.TextColor3=cream
+	tab.TextWrapped=true;tab.TextSize=12
+	tab.ClipsDescendants=true
 	tab.Name='Tab_'..d.id
 	tabs[d.id]=tab
 	tab.Activated:Connect(function() selected=d.id; if state then state.selected=d.id end end)
@@ -855,6 +858,8 @@ end
 local sector=label(drawer,'',UDim2.fromOffset(18,99),UDim2.fromOffset(350,18),11,rose)
 local name=label(drawer,'Loading your portfolio…',UDim2.fromOffset(18,121),UDim2.fromOffset(350,34),26)
 name.Font=Enum.Font.GothamBold
+name.TextScaled=true
+create('UITextSizeConstraint',name,{MinTextSize=18,MaxTextSize=26})
 local story=label(drawer,'The server is preparing your district.',UDim2.fromOffset(18,162),UDim2.fromOffset(350,54),14,muted)
 local metrics=create('Frame',drawer,{Position=UDim2.fromOffset(18,229),Size=UDim2.fromOffset(354,66),BackgroundColor3=panel,BorderSizePixel=0})
 corner(metrics,9)
@@ -948,7 +953,10 @@ UIS.InputBegan:Connect(function(input,processed)
 end)
 remote.OnClientEvent:Connect(function(snapshot)
 	state=snapshot
-	if snapshot.selected then selected=snapshot.selected; collapsed=false; drawer.Visible=true end
+	if snapshot.selected then
+		selected=snapshot.selected
+		if not UIS.TouchEnabled or not (snapshot.message and snapshot.message:match('^Welcome%.')) then collapsed=false;drawer.Visible=true end
+	end
 	if snapshot.message then
 		toastText.Text=snapshot.message
 		toast.Visible=true

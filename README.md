@@ -24,7 +24,9 @@ Regenerate the curated module/config aliases with `python3 ../tools/import_city_
 
 77 domain assertions pass (30 economy, 12 save-lease transforms, 35 city progression/operations). All Luau compiles, and Rojo builds the current export.
 
-In Studio, the first city iteration generated four districts / 48 premises / twelve menu tabs. Acquisition, travel, walking into premises, a real proximity operation cash reward, and the cooldown rejection passed. This occurred before the DBD case overlay/aliases were added. The latest overlay still requires rendered validation: Studio stopped responding during native Save As navigation to the SSD. Source and independent Rojo exports remain saved.
+In Studio, four districts / 48 premises / twelve menu tabs were verified. Acquisition, travel, walking inside, proximity operation cash reward, and cooldown rejection passed. The DBD case overlay subsequently rendered correctly. An iPhone XR touch simulation verified the menu starts closed, native movement/jump controls remain available, and the portfolio toggle opens the scrollable menu.
+
+The expanded version is uploaded and privately published as cloud version 4. An actual owner cloud playtest loaded the city at `https://play.roblox.com/games/start?placeId=135362854447570`. Physical phone play and cloud save/rejoin are still pending. Private owner play is distinct from public release.
 
 Still required: deeper operating jobs/contracts, onboarding/objectives, mobile/touch rendered acceptance, full 2–4 player isolation, real cloud save/rejoin, visual polish and actual public joining. The original prototype's single-client flow passed; that does not establish full acceptance of this expansion.
 
@@ -44,7 +46,7 @@ Open the new export in Studio and press Test. A fresh Rojo export generates its 
 
 ## Publication status
 
-Existing private upload: **CUPEC Acquisition Tycoon**, place `135362854447570`, universe `10774083670`, owned by `robloxname123007`. Identity verification shows Complete. Public release was explicitly rejected by the new-creator waiting period; account reaches two days old 3 November 2026 at 05:40:57 Bangkok. No public or successful player-app join is claimed. The city expansion has not replaced the cloud prototype yet.
+Existing private upload: **CUPEC Acquisition Tycoon**, place `135362854447570`, universe `10774083670`, owned by `robloxname123007`. Identity verification shows Complete. Public release was explicitly rejected by the new-creator waiting period; account reaches two days old 3 November 2026 at 05:40:57 Bangkok. No public release or native player-app join is claimed; private cloud-browser joining is verified. The city expansion replaced the private cloud prototype as version 4; actual owner cloud joining succeeded. Public release and physical phone acceptance remain pending.
 
 No paid assets, purchases or ads. Preserve source licenses and verify the actual URL and player join before calling it live.
 
