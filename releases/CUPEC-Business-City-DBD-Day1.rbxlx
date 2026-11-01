@@ -821,7 +821,7 @@ local function label(p,text,pos,size,fontSize,color)
 end
 local function button(p,text,pos,size,color)
 	local b=create('TextButton',p,{Text=text,Position=pos,Size=size,BackgroundColor3=color or rose,
-		TextColor3=navy,Font=Enum.Font.GothamBold,TextSize=14,BorderSizePixel=0,AutoButtonColor=true})
+		TextColor3=navy,Font=Enum.Font.GothamBold,TextSize=14,BorderSizePixel=0,AutoButtonColor=true,TextWrapped=true})
 	corner(b,9)
 	return b
 end
@@ -839,34 +839,37 @@ toggle.Name='TogglePortfolio'
 local market=label(top,'',UDim2.new(1,-348,0,66),UDim2.fromOffset(330,18),12,gold)
 market.TextXAlignment=Enum.TextXAlignment.Right
 
-local drawer=create('ScrollingFrame',gui,{Name='DealRoom',AnchorPoint=Vector2.new(0,1),Position=UDim2.new(0,12,1,-12),Size=UDim2.fromOffset(390,474),CanvasSize=UDim2.fromOffset(390,530),ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=4,ScrollBarImageColor3=rose,BackgroundColor3=navy,BorderSizePixel=0})
+local drawer=create('Frame',gui,{Name='DealRoom',AnchorPoint=Vector2.new(0,1),Position=UDim2.new(0,12,1,-12),Size=UDim2.fromOffset(390,530),BackgroundColor3=navy,BorderSizePixel=0})
 corner(drawer)
 drawer.Visible=not collapsed
 local scale=create('UIScale',drawer,{Scale=1})
-label(drawer,'YOUR NEXT MOVE',UDim2.fromOffset(18,12),UDim2.fromOffset(300,22),12,rose)
+local content=create('ScrollingFrame',drawer,{Name='Content',Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(390,388),CanvasSize=UDim2.fromOffset(390,384),ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=4,ScrollBarImageColor3=rose,BackgroundTransparency=1,BorderSizePixel=0,ClipsDescendants=true})
+label(content,'YOUR NEXT MOVE',UDim2.fromOffset(18,12),UDim2.fromOffset(300,22),12,rose)
 local tabs={}
-local tabStrip=create('ScrollingFrame',drawer,{Name='BusinessTabs',Position=UDim2.fromOffset(18,42),Size=UDim2.fromOffset(354,48),CanvasSize=UDim2.fromOffset(#Config.Businesses*126,42),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollingDirection=Enum.ScrollingDirection.X})
+local tabStrip=create('ScrollingFrame',content,{Name='BusinessTabs',Position=UDim2.fromOffset(18,42),Size=UDim2.fromOffset(354,48),CanvasSize=UDim2.fromOffset(#Config.Businesses*126,42),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollingDirection=Enum.ScrollingDirection.X})
 for i,d in Config.Businesses do
 	local tab=button(tabStrip,tostring(i)..'  '..d.name,UDim2.fromOffset((i-1)*126,0),UDim2.fromOffset(120,40),panel)
 	tab.TextColor3=cream
 	tab.TextWrapped=true;tab.TextSize=12
 	tab.ClipsDescendants=true
+	tab.TextScaled=true
+	create('UITextSizeConstraint',tab,{MinTextSize=9,MaxTextSize=12})
 	tab.Name='Tab_'..d.id
 	tabs[d.id]=tab
 	tab.Activated:Connect(function() selected=d.id; if state then state.selected=d.id end end)
 end
-local sector=label(drawer,'',UDim2.fromOffset(18,99),UDim2.fromOffset(350,18),11,rose)
-local name=label(drawer,'Loading your portfolio…',UDim2.fromOffset(18,121),UDim2.fromOffset(350,34),26)
+local sector=label(content,'',UDim2.fromOffset(18,99),UDim2.fromOffset(350,18),11,rose)
+local name=label(content,'Loading your portfolio…',UDim2.fromOffset(18,121),UDim2.fromOffset(350,34),26)
 name.Font=Enum.Font.GothamBold
 name.TextScaled=true
 create('UITextSizeConstraint',name,{MinTextSize=18,MaxTextSize=26})
-local story=label(drawer,'The server is preparing your district.',UDim2.fromOffset(18,162),UDim2.fromOffset(350,54),14,muted)
-local metrics=create('Frame',drawer,{Position=UDim2.fromOffset(18,229),Size=UDim2.fromOffset(354,66),BackgroundColor3=panel,BorderSizePixel=0})
+local story=label(content,'The server is preparing your district.',UDim2.fromOffset(18,162),UDim2.fromOffset(350,54),14,muted)
+local metrics=create('Frame',content,{Position=UDim2.fromOffset(18,229),Size=UDim2.fromOffset(354,66),BackgroundColor3=panel,BorderSizePixel=0})
 corner(metrics,9)
 local metricA=label(metrics,'',UDim2.fromOffset(12,6),UDim2.fromOffset(160,49),14)
 local metricB=label(metrics,'',UDim2.fromOffset(178,6),UDim2.fromOffset(164,49),14,teal)
-local project=label(drawer,'',UDim2.fromOffset(18,309),UDim2.fromOffset(350,43),16,cream)
-local detail=label(drawer,'',UDim2.fromOffset(18,353),UDim2.fromOffset(350,26),13,muted)
+local project=label(content,'',UDim2.fromOffset(18,309),UDim2.fromOffset(350,43),16,cream)
+local detail=label(content,'',UDim2.fromOffset(18,353),UDim2.fromOffset(350,26),13,muted)
 local action=button(drawer,'Connecting…',UDim2.fromOffset(18,389),UDim2.fromOffset(354,48),rose)
 action.Name='Action'
 local travel=button(drawer,'VISIT BUSINESS',UDim2.fromOffset(18,445),UDim2.fromOffset(173,36),cream)
@@ -895,7 +898,7 @@ local function refresh()
 	sector.Text=d.sector
 	name.Text=d.name
 	story.Text=d.story
-	metricA.Text=if level==nil then 'ASKING PRICE\n'..money(d.cost) else 'GAME ASSET VALUE\n'..money(d.assets)
+	metricA.Text=if level==nil then 'GAME ASKING PRICE\n'..money(d.cost) else 'GAME ASSET VALUE\n'..money(d.assets)
 	metricB.Text=if level==nil then ('GAME PRICE / ASSETS\n%.2fx'):format(d.cost/d.assets) else 'IMPROVEMENTS\n'..level..' / '..#d.projects
 	local nextProject=level~=nil and d.projects[level+1] or nil
 	local cost=d.cost
@@ -974,7 +977,14 @@ local function resize()
 	local headerHeight=if small then 118 else 90
 	top.Size=UDim2.new(1,-24,0,headerHeight)
 	cash.Position=UDim2.fromOffset(16,if small then 53 else 43)
-	drawer.Size=UDim2.fromOffset(390,math.min(474,math.max(100,(size.Y-inset.Y-headerHeight-45)/scale.Scale)))
+	local cardHeight=math.min(530,math.max(190,(size.Y-inset.Y-headerHeight-45)/scale.Scale))
+	drawer.Size=UDim2.fromOffset(390,cardHeight)
+	local bodyHeight=cardHeight-142
+	content.Size=UDim2.fromOffset(390,bodyHeight)
+	action.Position=UDim2.fromOffset(18,bodyHeight+5)
+	travel.Position=UDim2.fromOffset(18,bodyHeight+61)
+	caseButton.Position=UDim2.fromOffset(199,bodyHeight+61)
+	footer.Position=UDim2.fromOffset(18,bodyHeight+103)
 	toast.Position=UDim2.new(0.5,0,0,headerHeight+20)
 	strap.Visible=not small
 	income.Position=if small then UDim2.fromOffset(16,83) else UDim2.fromOffset(246,44)
